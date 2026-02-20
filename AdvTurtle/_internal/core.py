@@ -438,7 +438,7 @@ class Turtle(Pen, Navigator):
     def __init__(
         self, 
         figure: typing.Optional[pygame.Surface] = None, 
-        undo_stack: int = 20, 
+        undo_stack: int = 1000, 
         visible: bool = True
     ) -> None:
         if undo_stack < 0:
@@ -598,7 +598,7 @@ class Turtle(Pen, Navigator):
         Pen._mark(self)
     
     def _commit_to_canvas(self) -> None:
-        self._commit(self._canvas, using_undo_stack=True, permanent=True)
+        self._commit(self._canvas, using_undo_stack=True)
     
     def _start_command(self, spec: typing.Tuple[typing.Callable, ...]) -> None:
         func_id, *args = spec

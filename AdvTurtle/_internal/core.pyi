@@ -162,7 +162,7 @@ class Turtle(Pen, Navigator):
     def __init__(
         self, 
         figure: typing.Optional[pygame.Surface] = None, 
-        undo_stack: int = 20, 
+        undo_stack: int = 1000, 
         visible: bool = True
     ) -> None: ...
     @property

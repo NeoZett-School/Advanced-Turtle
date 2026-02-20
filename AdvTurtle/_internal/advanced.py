@@ -11,7 +11,7 @@ class Turtle(_Turtle):
     def __init__(
         self,
         figure: typing.Optional[pygame.Surface] = None,
-        undo_stack: int = 5,
+        undo_stack: int = 1000,
         visible: bool = True, 
         keybinds: typing.Optional[KeyBinds] = None,
     ) -> None:
