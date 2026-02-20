@@ -587,18 +587,15 @@ class Turtle(Pen, Navigator):
         self._command_queue.append((id_or_func, *args))
     
     def commit(self) -> None:
-        self._command_queue.append((Turtle._commit_to_canvas,))
+        self._command_queue.append((Turtle._new_path,))
     
     def _new_path(self) -> None:
-        self._commit_to_canvas()
+        self._commit(self._canvas, using_undo_stack=True)
         Pen._new_path(self)
     
     def _mark(self) -> None:
         self.redo_path.clear()
         Pen._mark(self)
-    
-    def _commit_to_canvas(self) -> None:
-        self._commit(self._canvas, using_undo_stack=True)
     
     def _start_command(self, spec: typing.Tuple[typing.Callable, ...]) -> None:
         func_id, *args = spec
