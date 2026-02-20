@@ -87,6 +87,26 @@ class Pen:
         self._pen_down = True
         self._visible = True
     
+    def set_size(self, size: int = 2) -> None:
+        self.size = size
+    
+    def set_speed(self, speed: float = 50) -> None:
+        self.speed = speed
+    
+    @typing.overload
+    def set_color(self, r: int, g: int, b: int) -> None: ...
+    @typing.overload
+    def set_color(self, color: ColorValue) -> None: ...
+    
+    def set_color(self, *args: typing.Any) -> None: 
+        if not args:
+            raise ValueError("Color required.")
+
+        if len(args) == 1:
+            self.color = standardize_color(args[0])
+        else:
+            self.color = pygame.Color(*args)
+    
     def hide(self) -> None:
         self._visible = False
     
@@ -277,7 +297,10 @@ _COMMAND_TABLE = [
     Pen.hide,
     Pen.show,
     Pen.penup,
-    Pen.pendown
+    Pen.pendown,
+    Pen.set_size,
+    Pen.set_speed,
+    Pen.set_color
 ]
 
 CMD_NAVIGATOR_FORWARD = 0
@@ -294,6 +317,9 @@ CMD_PEN_HIDE = 10
 CMD_PEN_SHOW = 11
 CMD_PEN_PENUP = 12
 CMD_PEN_PENDOWN = 13
+CMD_PEN_SET_SIZE = 14
+CMD_PEN_SET_SPEED = 15
+CMD_PEN_SET_COLOR = 16
 
 class Screen:
     """Turtle screen to render upon."""
@@ -465,33 +491,13 @@ class Turtle(Pen, Navigator):
         self.figure = surface
     
     def set_size(self, size: int = 2) -> None:
-        self._command_queue.append((Turtle._set_size, size))
-    
-    def _set_size(self, size: int = 2) -> None:
-        self.size = size
+        self._command_queue.append((CMD_PEN_SET_SIZE, size))
     
     def set_speed(self, speed: float = 50) -> None:
-        self._command_queue.append((Turtle._set_speed, speed))
-    
-    def _set_speed(self, speed: float = 50) -> None:
-        self.speed = speed
-    
-    @typing.overload
-    def set_color(self, r: int, g: int, b: int) -> None: ...
-    @typing.overload
-    def set_color(self, color: ColorValue) -> None: ...
+        self._command_queue.append((CMD_PEN_SET_SPEED, speed))
 
     def set_color(self, *args: typing.Any) -> None: 
-        self._command_queue.append((Turtle._set_color, *args))
-
-    def _set_color(self, *args: typing.Any) -> None: 
-        if not args:
-            raise ValueError("Color required.")
-
-        if len(args) == 1:
-            self.color = standardize_color(args[0])
-        else:
-            self.color = pygame.Color(*args)
+        self._command_queue.append((CMD_PEN_SET_COLOR, *args))
     
     def clear(self) -> None:
         self._command_queue.append((Turtle._clear,))
