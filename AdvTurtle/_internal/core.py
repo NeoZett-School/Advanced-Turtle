@@ -456,7 +456,8 @@ class Turtle(Pen, Navigator):
         self._origin = start
         self._target_pos = Vec2D(*start)
         self._render_pos = Vec2D(*start)
-        self.clear()
+        self._command_queue.clear()
+        self._clear()
     
     def set_figure(self, surface: pygame.Surface) -> None:
         self._original_figure = surface.copy()
@@ -464,9 +465,15 @@ class Turtle(Pen, Navigator):
         self.figure = surface
     
     def set_size(self, size: int = 2) -> None:
+        self._command_queue.append((Turtle._set_size, size))
+    
+    def _set_size(self, size: int = 2) -> None:
         self.size = size
     
     def set_speed(self, speed: float = 50) -> None:
+        self._command_queue.append((Turtle._set_speed, speed))
+    
+    def _set_speed(self, speed: float = 50) -> None:
         self.speed = speed
     
     @typing.overload
@@ -475,6 +482,9 @@ class Turtle(Pen, Navigator):
     def set_color(self, color: ColorValue) -> None: ...
 
     def set_color(self, *args: typing.Any) -> None: 
+        self._command_queue.append((Turtle._set_color, *args))
+
+    def _set_color(self, *args: typing.Any) -> None: 
         if not args:
             raise ValueError("Color required.")
 
@@ -484,7 +494,9 @@ class Turtle(Pen, Navigator):
             self.color = pygame.Color(*args)
     
     def clear(self) -> None:
-        self._command_queue.clear()
+        self._command_queue.append((Turtle._clear,))
+
+    def _clear(self) -> None:
         self._canvas.fill((0, 0, 0, 0))
         self.path.clear()
     
@@ -549,6 +561,9 @@ class Turtle(Pen, Navigator):
     def dot(self) -> None:
         self._command_queue.append((Turtle._dot,))
     
+    def _dot(self) -> None:
+        pygame.draw.rect(self._canvas, self.color, pygame.Rect(*self.position, 1, 1))
+    
     def circle(
         self, 
         radius: int, 
@@ -563,9 +578,6 @@ class Turtle(Pen, Navigator):
         *args: typing.Any
     ) -> None:
         self._command_queue.append((id_or_func, *args))
-    
-    def _dot(self) -> None:
-        pygame.draw.rect(self._canvas, self.color, pygame.Rect(*self.position, 1, 1))
     
     def _new_path(self) -> None:
         self._commit(self._canvas, using_undo_stack=True)
