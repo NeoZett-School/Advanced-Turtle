@@ -1,104 +1,52 @@
-# 🐢 Advanced-Turtle
-A modern, command-driven turtle graphics engine built on top of **pygame**.
+# 🐢 Advanced Turtle
 
-This project reimagines Python’s classic turtle module with:
+**Advanced Turtle** is a modern, command-driven turtle graphics engine built on top of **pygame**.  
+It reimagines Python’s classic `turtle` module with a focus on performance, extensibility, and modern design.
 
-- A command-queue–based execution model
-
-- Time-based interpolation (frame-rate independent movement)
-
-- Surface-backed rendering
-
-- Rotation caching
-
-- Undo/redo support
-
-- Extensible opcode-style dispatch system
-
-It is designed as a learning-focused but architecturally serious implementation.
+Inspired by the original CPython implementation, this project introduces a queue-based execution model, VM-style command dispatch, animation interpolation, and retained-mode rendering.
 
 ## ✨ Features
 
-- 🎯 Command queue with opcode dispatch
+- 🧠 **Opcode-driven Command Queue** — Efficient, numeric dispatch instead of dynamic lookup  
+- ⏱ **Frame-rate Independent Motion** — Movement interpolates with `dt` for smooth animation  
+- 📌 **Logical vs Render Position** — Separation between internal state and visual rendering  
+- ✍️ **Persistent Drawing Surface** — Path segments commit to an off-screen canvas  
+- ↩️ **Undo / Redo Support**  
+- 🔄 **Rotation Caching** — Efficient sprite rotation with caching  
+- 🧩 **Minimal VM-style Instruction System** — Compact and extensible  
+- 🏷 **Custom Commands & Injection** — Extendable beyond built-ins
 
-- ⏱ Time-based animation (dt driven)
-
-- 🧭 Logical vs render position separation
-
-- 🖌 Persistent drawing surface (retained mode rendering)
-
-- ↩ Undo / redo support
-
-- 🔄 Rotation caching for turtle sprite
-
-- 🎨 Flexible color handling
-
-- 🧱 Minimal VM-style instruction system
-
-- 🧩 Custom command injection
-
-## 🧠 Architecture Overview
-
-Unlike the standard turtle module, this implementation:
-
-- Uses a **command queue** instead of immediate execution
-
-- Separates:
-
-    - _target_pos (logical destination)
-
-    - _render_pos (interpolated visual position)
-
-- Executes movement incrementally using delta time (dt)
-
-- Uses an opcode table for fast dispatch
-
-### Execution Flow
-
-```
-User calls forward()
-→ Instruction enqueued
-→ Update loop fetches opcode
-→ Navigator updates target state
-→ Interpolator moves render position
-→ Pen marks path
-→ Canvas commits lines
-→ Screen renders final result
-```
-
-This resembles a minimal retained-mode rendering engine.
-
-## 📦 Installation
+## 🚀 Installation
 
 Requirements:
 
-- Python 3.10+
+- Python 3.10 or above  
+- `pygame`
 
-- pygame
+Install `pygame`:
 
-Install pygame:
-
-```batch
+```bash
 pip install pygame
 ```
 
 Clone the repository:
 
 ```batch
-git clone https://github.com/yourname/pygame-turtle.git
-cd pygame-turtle
+git clone https://github.com/NeoZett-School/Advanced-Turtle
+cd Advanced-Turtle
 ```
 
-## 🚀 Quick Example
+## 🔧 Quick Start
+
+Here's a simple example:
 
 ```python
 import pygame
-from turtle_engine import Screen, Turtle  # adjust import as needed
+from pygame_turtle import Screen, Turtle
 
 pygame.init()
 
 screen = Screen(800, 600)
-
 t = Turtle()
 t.speed = 200
 
@@ -110,97 +58,77 @@ t.circle(50)
 screen.mainloop()
 ```
 
-## 🧭 Core Components
+This code opens a window, creates a turtle, and draws a rectangle with a circle.
 
-`Navigator`
+## 📐 Core Concepts
 
-Handles movement logic:
+### 🐍 Navigator
+
+Handles movement and orientation:
 
 - `forward(distance)`
-
 - `goto(x, y)`
-
 - `teleport(x, y)`
-
-- `left(angle)`
-
-- `right(angle)`
-
+- `left(angle)`, `right(angle)`
 - `set_heading(angle)`
-
-- `towards(x, y)`
-
+- `head_towards(x, y)`
+- `distance(...)`
+- `towards(...)`
 - `circle(radius, steps, direction)`
 
-Maintains:
+Internally manages:
 
-- `_target_pos`
-
-- `_render_pos`
-
+- `_target_pos`: next logical position
+- `_render_pos`: interpolated current position
+- `position`: alias to `_render_pos`
 - `heading`
-
 - `speed`
 
----
+### ✏️ Pen
 
-`Pen`
+Tracks drawing state:
 
-Responsible for:
-
-- Drawing state
-
+- Pen up / down
 - Visibility
-
 - Path segmentation
-
-- Stroke accumulation
-
----
-
-`Turtle`
-
-Combines `Pen` and `Navigator`.
-
-Adds:
-
-- Command queue
-
-- Undo/redo
-
-- Rotation cache
-
-- Surface-backed canvas
-
-- Sprite rendering
-
-- Custom command support
+- Drawing accumulation on a canvas surface
 
 ---
 
-`Screen`
+### 🐢 Turtle
+
+Combines Navigator and Pen into a command-driven actor.
+
+Features:
+
+- Command queue (deque)
+- Undo / redo support
+- Rotation cache for figures
+- Persistent drawing (off-screen canvas)
+- Custom command injection
+- API similar to Python’s turtle (but frame-driven)
+
+### 🖥 Screen
+
+Wraps the `pygame` window:
 
 Manages:
 
-- Pygame surface
-
-- Frame timing
-
+- Surface
+- Timing (dt, FPS)
 - Background
-
 - Update loop
+- Renders all active turtles
 
-- Multiple turtles
+## 🧠 Command System
 
-## 🧾 Command System
-
-Instructions are stored as tuples:
+Suffix commands are enqueued as tuples:
 
 ```python
-(CMD_OPCODE, arg1, arg2, ...)
+(self._command_queue.append((CMD_OPCODE, *args)))
 ```
 
-Dispatch occurs via a global opcode table:
+Opcode values come from a global table:
 
 ```python
 _COMMAND_TABLE = [
@@ -212,152 +140,87 @@ _COMMAND_TABLE = [
 
 This design:
 
-- Avoids string lookups
+- avoids string lookups
+- avoids getattr overhead
+- allows fast dispatch
+- supports extensibility
 
-- Avoids getattr
+## ⏱ Animation Model
 
-- Enables fast numeric dispatch
-
-- Allows low-level extensibility
-
-## 🎬 Animation Model
-
-Movement is not instantaneous.
-
-Each frame:
+Movement is not instantaneous. Each frame:
 
 ```python
 delta = target - render_position
-step = min(speed * dt, distance)
-render_position += normalized(delta) * step
+step  = min(speed * dt, distance)
+render_pos += normalized(delta) * step
 ```
 
-This ensures:
+This yields:
 
-- Smooth animation
+- smooth motion
+- frame-rate independent animation
+- deterministic simulation
 
-- Frame-rate independence
+## 📏 Drawing Model
 
-- Deterministic motion
-
-## 🎨 Drawing Model
-
-- Lines are stored in segments.
-
-- Segments are committed to an off-screen surface.
-
-- Static drawing lives on _canvas.
-
-- Active segments are drawn during render.
-
-- Sprite (figure) is rotated and cached.
+- Path is stored in segments
+- Static segments commit to the canvas
+- Active drawing is rendered every frame
+- Turtle figure (sprite) rotates smoothly
+- Rotation cache is used to avoid repeated transforms
 
 ## ↩ Undo / Redo
 
-Supports:
+Undo behavior supports:
 
-- Undoing path segments
+- Path segment removal
+- Redo path insertion
+- Command stack rollback (when appropriate)
 
-- Redoing segments
+## 🚀 Extending the Engine
 
-- Undoing queued commands (when applicable)
-
-Undo depth is configurable.
-
-## 🔄 Rotation Caching
-
-To avoid repeated expensive transforms:
+You can inject custom commands:
 
 ```python
-self._rotation_cache[angle] = rotated_surface
+t.custom_command(my_opcode, arg1, arg2, ...)
 ```
 
-Angles are cached to prevent redundant pygame.transform.rotate calls.
+Where `my_opcode` can be either:
 
-## 🧩 Custom Commands
+- a numeric opcode in _COMMAND_TABLE, or
+- a callable (direct method)
 
-You can inject custom instructions:
-
-```python
-t.custom_command(callable_or_opcode, *args)
-```
-
-Advanced users can extend the opcode table for new behaviors.
-
-## 🎯 Design Goals
+## 🛠 Design Goals
 
 - Educational clarity
-
-- Engine-style architecture
-
-- Clean state separation
-
-- Explicit command execution
-
+- Clean execution model
 - Minimal dynamic lookup
+- Extensible command dispatch
+- Smooth animation via interpolation
 
-- Deterministic update cycle
-
-## ⚠ Differences from Python's turtle
-
-This implementation:
-
-- Does not use Tkinter
-
-- Does not execute commands immediately
-
-- Is frame-driven, not call-driven
-
-- Is built entirely on pygame
-
-- Is more engine-oriented than teaching-oriented
+This isn’t a drop-in replacement for the default `turtle` — it’s an engine with its own execution style.
 
 ## 📈 Performance Notes
 
-The primary runtime cost comes from:
+The largest costs during runtime are:
 
 - pygame.draw.lines
-
 - Surface blitting
+- Sprite rotation (cached)
 
-- Surface rotation (cached)
-
-Command dispatch overhead is minimal compared to rendering.
-
-## 🛠 Future Improvements
-
-Potential directions:
-
-- Enum-based opcodes
-
-- Bytecode-style instruction packing
-
-- Batch mode (disable interpolation)
-
-- Event hooks
-
-- Timeline scheduling
-
-- GPU-accelerated backend
-
-- Multi-turtle synchronization
+Command dispatch itself is low overhead compared to rendering workload.
 
 ## 📄 License
 
-MIT License
+This project is licensed under the MIT License.
 
-## 👨‍💻 Why This Exists
+## 💡 Why This Exists
 
-This project is an exploration of:
+Advanced Turtle is an exploration in:
 
-- Command interpreters
+- Command scheduling
+- Engine-style rendering
+- Deterministic motion
+- VM-style dispatch
 
-- Retained-mode rendering
-
-- Engine-like architecture
-
-- Clean state management
-
-- Performance-aware Python design
-
-It is both a learning project and a foundation for experimentation.
+It blends educational graphics with performance-aware Python design.
